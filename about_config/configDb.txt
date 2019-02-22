@@ -1,0 +1,56 @@
+// Drop table 
+DROP TABLE `bss_thta`.`bs_user`;
+
+// Create bs_user table
+CREATE TABLE `bss_thta`.`bs_user` (
+  `user_id` INT NOT NULL AUTO_INCREMENT COMMENT '',
+  `user_name` VARCHAR(100) NOT NULL COMMENT '',
+  `user_email` VARCHAR(100) NOT NULL COMMENT '',
+  `user_pwd` VARCHAR(45) NOT NULL COMMENT '',
+  `reg_date` TIMESTAMP NULL COMMENT '',
+  PRIMARY KEY (`user_id`)  COMMENT '');
+  
+// Create bs_team table
+CREATE TABLE `bss_thta`.`bs_team` (
+  `team_id` INT NOT NULL AUTO_INCREMENT COMMENT '',
+  `team_name` VARCHAR(100) NOT NULL COMMENT '',
+  `team_desc` VARCHAR(1000) NULL COMMENT '',
+  `reg_date` TIMESTAMP NULL COMMENT '',
+  PRIMARY KEY (`team_id`)  COMMENT '');
+  
+// Create bs_board
+CREATE TABLE `bss_thta`.`bs_board` (
+  `board_id` INT NOT NULL AUTO_INCREMENT COMMENT '',
+  `board_title` VARCHAR(100) NOT NULL COMMENT '',
+  PRIMARY KEY (`board_id`)  COMMENT '');
+  
+// Create bs_board_list
+CREATE TABLE `bss_thta`.`bs_board_list` (
+  `blist_id` INT NOT NULL AUTO_INCREMENT COMMENT '',
+  `blist_title` VARCHAR(45) NOT NULL COMMENT '',
+  `board_id` INT NOT NULL COMMENT '',
+  PRIMARY KEY (`blist_id`)  COMMENT '');
+  
+// Create bs_card
+CREATE TABLE `bss_thta`.`bs_card` (
+  `card_id` INT NOT NULL AUTO_INCREMENT COMMENT '',
+  `card_title` VARCHAR(100) NOT NULL COMMENT '',
+  `blist_id` INT NOT NULL COMMENT '',
+  PRIMARY KEY (`card_id`)  COMMENT '');
+  
+// Create user_team_board
+CREATE TABLE `bss_thta`.`user_team_board` (
+  `user_id` INT NOT NULL COMMENT '',
+  `team_id` INT NULL COMMENT '',
+  `board_id` INT NULL COMMENT '');
+
+// Create user_card
+CREATE TABLE `bss_thta`.`user_card` (
+  `user_id` INT NOT NULL COMMENT '',
+  `card_id` VARCHAR(45) NULL COMMENT '');
+
+ALTER TABLE `bss_thta`.`bs_board` 
+ADD COLUMN `reg_date` VARCHAR(45) NULL COMMENT '' AFTER `board_title`;
+  
+// Link
+{"user_name":"Hnin","user_email":"hnin@gmail.com","user_pwd":"123456"}

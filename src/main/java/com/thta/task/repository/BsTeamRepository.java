@@ -138,17 +138,19 @@ public class BsTeamRepository {
 
 	// To delete team. This will delete all team_id in the user_team_board.
 	public int deleteBsTeam(BsTeam team) {
-		if (deleteBsTeamById(team.getTeam_id()) > 0) {
-			List<Integer> boardIdList = userTeamBoardService.getAllBoardIdByTeamId(team.getTeam_id());
-			if (boardIdList.size() > 0) {
-				// To delete board id connected with deleted team id
-				for (int i = 0; i < boardIdList.size(); i++) {
-					bsBoardService.deleteBsBoardById(i);
-				}
+		// Before deleting the team, need to check board that is connected with team.
+		List<Integer> boardIdList = userTeamBoardService.getAllBoardIdByTeamId(team.getTeam_id());
+		if (boardIdList.size() > 0) {
+			// To delete board id connected with deleted team id
+			for (int i = 0; i < boardIdList.size(); i++) {
+				int deletedResult = bsBoardService.deleteBsBoardById(boardIdList.get(i)); // To delete in the board table.
+				System.out.println("THTA: " + deletedResult);
 			}
-			return userTeamBoardService.removeByTeamId(team.getTeam_id());
 		}
-		return 0;
+
+		// After deleting board, remove the team id from the dummy table.
+		userTeamBoardService.removeByTeamId(team.getTeam_id());
+		return deleteBsTeamById(team.getTeam_id());
 	}
 
 	// To delete team by id

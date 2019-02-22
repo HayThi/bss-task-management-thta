@@ -139,19 +139,24 @@ public class BsUserRepository {
 		if (checkUserEmail(user.getUser_email())) {
 			int userId = getUserIdByUserEmail(user.getUser_email());
 
+			// Check board connected with deleted user.
 			List<Integer> boardIds = userTeamBoardService.getAllBoardIdByUserId(userId);
 			if (boardIds.size() > 0) {
 				for (int i = 0; i < boardIds.size(); i++) {
-					bsBoardService.deleteBsBoardById(i);
+					bsBoardService.deleteBsBoardById(boardIds.get(i));
 				}
 			}
 
+			// Check team connected with deleted user.
 			List<Integer> teamIds = userTeamBoardService.getAllTeamIdByUserId(userId);
 			if (teamIds.size() > 0) {
 				for (int i = 0; i < teamIds.size(); i++) {
-					bsTeamService.deleteBsTeamById(i);
+					bsTeamService.deleteBsTeamById(teamIds.get(i));
 				}
 			}
+			
+			// After deleting board and team, delete user id from the dummy table.
+			userTeamBoardService.removeByUserId(userId);
 
 			return deleteUserByEmail(user.getUser_email());
 		}

@@ -1,0 +1,89 @@
+---------- User -----------
+// To retrieve all user
+--- /getAllBsUser
+
+// When you want to create user need to fill all data: user_name, user_email and user_pwd
+--- /createBsUser 
+{"user_name":"aye","user_email":"aye@gmail.com","user_pwd":"123456"}
+
+// When you want to update user, use user_email
+--- /updateBsUser
+{"user_name":"Hnin","user_email":"hnin@gmail.com","user_pwd":"123456"}
+{"user_name":"aye","user_pwd":"123456"}
+{"user_name":"Hninn","user_email":"hnin@gmail.com"}
+
+// When you want to delete user, you have to user email
+--- /deleteBsUser
+{"user_email":"thu@gmail.com"}
+
+
+---------- Team -----------
+// When retrieve all team info
+--- /getAllTeamInfo
+
+// When retrieve all team by user_id
+--- /getTeamsByUserId
+{"user_id":5}
+
+/**
+When create team,
+If user_id does not have in the user table can't create the team.
+*/
+--- /createBsTeam
+{"user_id":5,"team_name":"Test Team 1","team_desc": "Test Team 1 description"}
+{"user_id":3,"team_name":"Test Team 2"}
+
+/**
+When update team, with team_id can modify team_name or team_desc.
+If team_id is not corrected, can't update the data.
+*/
+--- /updateBsTeam
+{"team_id":6,"team_name":"Test Team 2 modify team_id 6","team_desc":"Test Team 2 modify team_id 6"}
+{"team_id":6,"team_name":"Test Team 2 modify"}
+{"team_id":6,"team_desc":"Test Team 2 modify"}
+
+/**
+When delete team, 
+if team_id is not included in the team table, then will not delete
+*/
+--- /deleteBsTeam
+{"team_id":5}
+
+
+---------- Board -----------
+// When retrieve all board info
+--- /getAllBsBoards
+
+// When retrieve all board by userId
+--- /getBoardsByUserId
+{"user_id":4}
+
+// When retrieve all board by teamId
+--- /getBoardsByTeamId
+{"team_id":3}
+
+/**
+When create board,
+When you create board, user_id or team_id is necessary to create board and board title.
+if user_id or team_id is not inclued in the respective table, can't create the board.
+*/
+--- /createBsBoard
+{"user_id":4,"board_title":"Create board by UserId 4"}
+{"user_id":6,"board_title":"Create board by UserId 1"}
+{"team_id":3,"board_title":"Create board by TeamId 3"}
+{"team_id":7,"board_title":"Create board by TeamId 7"}
+
+
+/**
+When update board,
+*/
+--- /updateBsBoard
+{"board_id":9,"board_title":"this board id 9"}
+
+/**
+When update board,
+*/
+--- /deleteBsBoard
+{"board_id":9}
+
+
