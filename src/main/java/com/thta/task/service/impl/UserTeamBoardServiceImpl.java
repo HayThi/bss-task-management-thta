@@ -12,7 +12,7 @@ import com.thta.task.service.UserTeamBoardService;
 public class UserTeamBoardServiceImpl implements UserTeamBoardService {
 
 	@Autowired
-	UserTeamBoardRepository userTeamBoardRepository;
+	private UserTeamBoardRepository userTeamBoardRepository;
 
 	@Override
 	public List<Integer> getAllTeamIdByUserId(int userId) {

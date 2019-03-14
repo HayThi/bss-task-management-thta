@@ -1,40 +1,43 @@
 package com.thta.task.controller;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
 import org.mockito.Matchers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.google.gson.Gson;
-import com.thta.task.CommonUtil;
+import com.thta.task.commom_utility.UserConstant;
 import com.thta.task.model.BsModal;
 import com.thta.task.model.BsTeam;
 
 /**
  * This is the Team Controller Unit Test.
  */
+@SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
 @RunWith(SpringRunner.class)
-@WebMvcTest(BsTeamController.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 public class BsTeamControllerTest {
 
 	@Autowired
@@ -44,11 +47,6 @@ public class BsTeamControllerTest {
 	private BsTeamController bsTeamController;
 
 	private Gson gson = new Gson();
-
-	@Before
-	public void setup() {
-		mockMvc = MockMvcBuilders.standaloneSetup(this.bsTeamController).build();
-	}
 
 	// To test when getAllTeamInfo URL is called.
 	@Test
@@ -64,10 +62,12 @@ public class BsTeamControllerTest {
 		teams.add(team1);
 		teams.add(team2);
 
-		BDDMockito.given(bsTeamController.getAllTeamInfo()).willReturn(teams);
+		ResponseEntity entity = new ResponseEntity<List<BsTeam>>(teams, HttpStatus.OK);
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/getAllTeamInfo").contentType(MediaType.APPLICATION_JSON))
-				.andDo(print()).andExpect(status().isOk()).andExpect(jsonPath("$[0].team_id", is(1)));
+		when(bsTeamController.getAllTeamInfo()).thenReturn(entity);
+
+		mockMvc.perform(get("/teams").contentType(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().isOk());
 	}
 
 	// To test when getTeamsByUserId URL is called.
@@ -87,11 +87,12 @@ public class BsTeamControllerTest {
 		BsModal modal = new BsModal();
 		modal.setUser_id(1);
 
-		BDDMockito.given(bsTeamController.getTeamsByUserId(Matchers.any(BsModal.class))).willReturn(teams);
+		ResponseEntity entity = new ResponseEntity<List<BsTeam>>(teams, HttpStatus.OK);
 
-		mockMvc.perform(MockMvcRequestBuilders.post("/getTeamsByUserId").contentType(MediaType.APPLICATION_JSON)
-				.content(gson.toJson(modal)).characterEncoding("utf-8")).andDo(print()).andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].team_id", is(1)));
+		when(bsTeamController.getTeamsByUserId(Matchers.anyInt())).thenReturn(entity);
+
+		mockMvc.perform(get("/teams/{userId}", 1).contentType(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().isOk());
 	}
 
 	// To test when createBsTeam URL is called.
@@ -102,18 +103,14 @@ public class BsTeamControllerTest {
 		modal.setTeam_name("create team user 4");
 		modal.setTeam_desc("create team test1");
 
-		BDDMockito.given(bsTeamController.createBsTeam(Matchers.any(BsModal.class)))
-				.willReturn(CommonUtil.getSuccessMsg());
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(4).toUri();
 
-		MvcResult result = mockMvc
-				.perform(post("/createBsTeam").contentType(MediaType.APPLICATION_JSON).content(gson.toJson(modal))
-						.characterEncoding("utf-8"))
-				.andExpect(status().isOk())
-				.andExpect(MockMvcResultMatchers.content().json(gson.toJson(CommonUtil.getSuccessMsg()))).andDo(print())
-				.andReturn();
+		ResponseEntity entity = new ResponseEntity<>(location, HttpStatus.CREATED);
 
-		String res = result.getResponse().getContentAsString();
-		System.err.println("createBsTeam is " + res);
+		when(bsTeamController.createBsTeam(Matchers.any(BsModal.class))).thenReturn(entity);
+
+		mockMvc.perform(post("/teams").contentType(MediaType.APPLICATION_JSON).content(gson.toJson(modal))).andDo(print())
+				.andExpect(status().isCreated());
 	}
 
 	// To test when updateBsTeam URL is called.
@@ -123,27 +120,30 @@ public class BsTeamControllerTest {
 		team.setTeam_id(9);
 		team.setTeam_name("modified team name");
 		team.setTeam_desc("Add team description");
+		
+		ResponseEntity entity = new ResponseEntity<>(UserConstant.TEAM_UPDATE_SUCCESS, HttpStatus.OK);
 
-		BDDMockito.given(bsTeamController.updateBsTeam(Matchers.any(BsTeam.class)))
-				.willReturn(CommonUtil.getSuccessMsg());
+		when(bsTeamController.updateBsTeam(Matchers.anyInt(), Matchers.any(BsTeam.class))).thenReturn(entity);
 
-		mockMvc.perform(post("/updateBsTeam").contentType(MediaType.APPLICATION_JSON).content(gson.toJson(team))
-				.characterEncoding("utf-8")).andExpect(status().isOk()).andExpect(jsonPath("$.msg_code", is("200")))
-				.andDo(print());
+		mockMvc.perform(put("/teams/9")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(gson.toJson(team)))
+				.andDo(print())
+				.andExpect(status().isOk());
 	}
 
 	// To test when deleteBsTeam URL is called.
 	@Test
 	public void deleteBsTeam() throws Exception {
-		BsTeam team = new BsTeam();
-		team.setTeam_id(4);
+				
+		ResponseEntity entity = new ResponseEntity<>(UserConstant.TEAM_DELETE_SUCCESS, HttpStatus.OK);
 
-		BDDMockito.given(bsTeamController.deleteBsTeam(Matchers.any(BsTeam.class)))
-				.willReturn(CommonUtil.getSuccessMsg());
+		when(bsTeamController.deleteBsTeam(Matchers.anyInt())).thenReturn(entity);
 
-		mockMvc.perform(post("/deleteBsTeam").contentType(MediaType.APPLICATION_JSON).content(gson.toJson(team))
-				.characterEncoding("utf-8")).andExpect(status().isOk()).andExpect(jsonPath("$.msg_code", is("200")))
-				.andDo(print());
+		mockMvc.perform(delete("/teams/9")
+				.contentType(MediaType.APPLICATION_JSON))
+				.andDo(print())
+				.andExpect(status().isOk());
 	}
 
 }

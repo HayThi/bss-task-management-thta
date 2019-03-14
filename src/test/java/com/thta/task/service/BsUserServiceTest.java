@@ -56,7 +56,7 @@ public class BsUserServiceTest {
 	public void deleteBsUser() {
 		BsUser user = new BsUser();		
 		user.setUser_email("test@gmail.com");
-		int createResult = bsUserService.deleteBsUser(user);
+		int createResult = bsUserService.deleteBsUser(1);
 		assertThat(createResult).isNotEqualTo(0);
 	}
 	

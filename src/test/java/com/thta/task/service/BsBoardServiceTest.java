@@ -21,7 +21,7 @@ import com.thta.task.model.BsModal;
 public class BsBoardServiceTest {
 
 	@Autowired
-	BsBoardService bsBoardService;
+	private BsBoardService bsBoardService;
 
 	// To test when retrieve all boards.
 	@Test
@@ -68,10 +68,8 @@ public class BsBoardServiceTest {
 
 	// To test when delete the board. This will also delete board_id in the dump.
 	@Test
-	public void deleteBsBoard() {
-		BsBoard board = new BsBoard();
-		board.setBoard_id(12);
-		int deleteResult = bsBoardService.deleteBsBoard(board);
+	public void deleteBsBoard() {		
+		int deleteResult = bsBoardService.deleteBsBoard(12);
 		assertThat(deleteResult).isNotEqualTo(0);
 	}
 

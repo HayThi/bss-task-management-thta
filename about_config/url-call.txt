@@ -86,4 +86,6 @@ When update board,
 --- /deleteBsBoard
 {"board_id":9}
 
+----------Modified-----
+localhost:8080/bss/users GET
 

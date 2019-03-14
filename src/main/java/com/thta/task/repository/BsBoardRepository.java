@@ -36,14 +36,20 @@ public class BsBoardRepository {
 
 	// Check board by board id.
 	public boolean checkBoardByBoardId(int boardId) {
+		boolean result = false;
+
 		String sql = "SELECT * FROM bs_board WHERE board_id = ?";
 		RowMapper<BsBoard> rowMapper = new BeanPropertyRowMapper<BsBoard>(BsBoard.class);
 		try {
 			jdbcTemplateOne.queryForObject(sql, rowMapper, boardId);
-			return true;
+			result = true;
 		} catch (Exception e) {
-			return false;
+			// print Stack Trace
+			e.printStackTrace(System.out);
+			result = false;
 		}
+
+		return result;
 	}
 
 	// Get all boards.
@@ -97,26 +103,32 @@ public class BsBoardRepository {
 				boards.add(board);
 			}
 		}
+
 		return boards;
 	}
 
 	// To create board.
 	public int createBsBoard(BsModal modal) {
-		if (modal.getTeam_id() != 0) {
-			if (bsTeamService.checkTeamByTeamId(modal.getTeam_id())) {
+		int result = 0;
+		try {
+			if (modal.getTeam_id() != 0) {
 				int teamId = modal.getTeam_id();
 				int boardId = getBoardIdAfterCreatingBoard(modal.getBoard_title());
-				return userTeamBoardService.addTeamIdAndBoardId(teamId, boardId);
-			}
+				result = userTeamBoardService.addTeamIdAndBoardId(teamId, boardId);
 
-		} else if (modal.getUser_id() != 0) {
-			if (bsUserService.checkUserByUserId(modal.getUser_id())) {
+			} else if (modal.getUser_id() != 0) {
 				int userId = modal.getUser_id();
 				int boardId = getBoardIdAfterCreatingBoard(modal.getBoard_title());
-				return userTeamBoardService.addUserIdAndBoardId(userId, boardId);
+				result = userTeamBoardService.addUserIdAndBoardId(userId, boardId);
 			}
+
+		} catch (Exception e) {
+			// print Stack Trace
+			e.printStackTrace(System.out);
+			result = 0;
 		}
-		return 0;
+
+		return result;
 	}
 
 	// To retrieve board id after creating the board.
@@ -132,31 +144,54 @@ public class BsBoardRepository {
 
 	// To update the board.
 	public int updateBsBoard(BsBoard board) {
-		if (checkBoardByBoardId(board.getBoard_id())) {
+		int result = 0;
+		try {
 			String qUpdate = "UPDATE bs_board ";
 			String qSet = "SET board_title = '" + board.getBoard_title() + "' ";
 			String qWhere = "WHERE board_id = " + board.getBoard_id();
+			result = jdbcTemplateOne.update(qUpdate + qSet + qWhere);
 
-			return jdbcTemplateOne.update(qUpdate + qSet + qWhere);
+		} catch (Exception e) {
+			// print Stack Trace
+			e.printStackTrace(System.out);
+			result = 0;
 		}
 
-		return 0;
+		return result;
 	}
 
 	// To delete the board and also delete the board id in the user_team_board.
-	public int deleteBsBoard(BsBoard board) {
-		if (checkBoardByBoardId(board.getBoard_id())) {
-			if (deleteBsBoardById(board.getBoard_id()) > 0) {
-				return userTeamBoardService.removeByBoardId(board.getBoard_id());
+	public int deleteBsBoard(int boardId) {
+		int result = 0;
+		try {
+			if (deleteBsBoardById(boardId) > 0) {
+				return userTeamBoardService.removeByBoardId(boardId);
 			}
+
+		} catch (Exception e) {
+			// print Stack Trace
+			e.printStackTrace(System.out);
+			result = 0;
+
 		}
-		return 0;
+
+		return result;
 	}
 
 	// To delete board by board id.
 	public int deleteBsBoardById(int id) {
-		String sql = "DELETE FROM bs_board WHERE board_id=?";
-		return jdbcTemplateOne.update(sql, id);
+		int result = 0;
+		try {
+			String sql = "DELETE FROM bs_board WHERE board_id=?";
+			result = jdbcTemplateOne.update(sql, id);
+
+		} catch (Exception e) {
+			// print Stack Trace
+			e.printStackTrace(System.out);
+			result = 0;
+		}
+
+		return result;
 	}
 
 }

@@ -1,150 +1,136 @@
 package com.thta.task.controller;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.net.URI;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.thta.task.model.BsMessage;
+import com.thta.task.commom_utility.UserConstant;
 import com.thta.task.model.BsModal;
 import com.thta.task.model.BsTeam;
 import com.thta.task.service.BsTeamService;
+import com.thta.task.service.BsUserService;
 
 /**
  * This is the team controller.
- * */
+ */
 @RestController
+@RequestMapping("teams")
 public class BsTeamController {
-	
+
 	private Logger logger = LogManager.getLogger(BsTeamController.class);
 
 	@Autowired
-	BsTeamService bsTeamService;
+	private BsTeamService bsTeamService;
+
+	@Autowired
+	private BsUserService bsUserService;
 
 	// To retrieve all team data
-	@RequestMapping("/getAllTeamInfo")
-	public List<BsTeam> getAllTeamInfo() {
-		logger.info(this.getClass().getSimpleName() + ": getAllTeamInfo");
-		return bsTeamService.getAllTeamInfo();
+	@GetMapping
+	public ResponseEntity<?> getAllTeamInfo() {
+		logger.debug(this.getClass().getSimpleName() + ": getAllTeamInfo");
+		return new ResponseEntity<>(bsTeamService.getAllTeamInfo(), HttpStatus.OK);
 	}
 
 	// To retrieve all teams data according to the user_id
-	@RequestMapping(value = "/getTeamsByUserId", method = RequestMethod.POST)
-	public List<BsTeam> getTeamsByUserId(@RequestBody BsModal modal) {
-		logger.info(this.getClass().getSimpleName() + ": getTeamsByUserId");
-		
-		if (checkUserId(modal)) {
-			return bsTeamService.getTeamsByUserId(modal.getUser_id());
-		} else {
-			return new ArrayList<BsTeam>();
-		}
-	}
+	@GetMapping(value = "/{userId}")
+	public ResponseEntity<?> getTeamsByUserId(@PathVariable("userId") int userId) {
+		logger.debug(this.getClass().getSimpleName() + ": getTeamsByUserId");
 
-	// To check user id.
-	private boolean checkUserId(BsModal modal) {
-		boolean result = false;
-		if (modal != null) {
-			if (modal.getUser_id() != 0) {
-				result = true;
-			}
+		if (bsUserService.checkUserByUserId(userId)) {
+			return new ResponseEntity<>(bsTeamService.getTeamsByUserId(userId), HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(UserConstant.USER_NOT_EXIST, HttpStatus.NOT_FOUND);
 		}
-		return result;
 	}
 
 	/**
-	 * To create team.
-	 * user_id and team_name are required. 
-	 * */
-	@RequestMapping(value = "/createBsTeam", method = RequestMethod.POST)
-	public BsMessage createBsTeam(@RequestBody BsModal modal) {
-		logger.info(this.getClass().getSimpleName() + ": createBsTeam");
-		
-		BsMessage bsMsg = new BsMessage();
-		bsMsg.setMsg_code("404");
-		bsMsg.setMsg_title("Warning");
-		bsMsg.setMsg_desc("Create Team Unsuccessfully.");
+	 * To create team. user_id and team_name are required.
+	 */
+	@PostMapping
+	public ResponseEntity<?> createBsTeam(@RequestBody BsModal modal) {
+		logger.debug(this.getClass().getSimpleName() + ": createBsTeam");
 
-		if (checkCreateTeam(modal)) {
-			if (bsTeamService.createBsTeam(modal) > 0) {
-				bsMsg.setMsg_code("200");
-				bsMsg.setMsg_title("Success");
-				bsMsg.setMsg_desc("Create user successfully.");
-			}
-		}
-		return bsMsg;
-	}
+		if (bsTeamService.checkCreateTeam(modal)) {
 
-	// To check team title that is required when create team.
-	private boolean checkCreateTeam(BsModal modal) {
-		boolean result = false;
-		if (modal != null) {
-			if (modal.getUser_id() != 0 && modal.getTeam_name() != null && !modal.getTeam_name().equals("")) {
-				result = true;
+			if (bsUserService.checkUserByUserId(modal.getUser_id())) {
+				int returnResult = bsTeamService.createBsTeam(modal);
+				if (returnResult > 0) {
+					URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+							.buildAndExpand(returnResult).toUri();
+					return new ResponseEntity<>(location, HttpStatus.CREATED);
+
+				} else {
+					return new ResponseEntity<>(UserConstant.TEAM_CREATE_FAIL, HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+
+			} else {
+				return new ResponseEntity<>(UserConstant.USER_NOT_EXIST, HttpStatus.NOT_FOUND);
 			}
+
+		} else {
+			return new ResponseEntity<>(UserConstant.TEAM_CREATE_REQUIRED, HttpStatus.PRECONDITION_REQUIRED);
 		}
-		return result;
 	}
 
 	// Update team data.
-	@RequestMapping(value = "/updateBsTeam", method = RequestMethod.POST)
-	public BsMessage updateBsTeam(@RequestBody BsTeam team) {
-		logger.info(this.getClass().getSimpleName() + ": updateBsTeam");
-		
-		BsMessage bsMsg = new BsMessage();
-		bsMsg.setMsg_code("404");
-		bsMsg.setMsg_title("Warning");
-		bsMsg.setMsg_desc("Create Team Unsuccessfully.");
-		System.out.println(team);
-		System.out.println(team.getTeam_id());
+	@PutMapping("/{teamId}")
+	public ResponseEntity<?> updateBsTeam(@PathVariable("teamId") int teamId, @RequestBody BsTeam team) {
+		logger.debug(this.getClass().getSimpleName() + ": updateBsTeam");
 
-		if (checkUpdateTeam(team)) {
-			if (bsTeamService.updateBsTeam(team) > 0) {
-				bsMsg.setMsg_code("200");
-				bsMsg.setMsg_title("Success");
-				bsMsg.setMsg_desc("Create user successfully.");
-			}
-		}
-		return bsMsg;
-	}
+		if (bsTeamService.checkTeamByTeamId(teamId)) {
+			team.setTeam_id(teamId);
 
-	// To check team title that is required when create team.
-	private boolean checkUpdateTeam(BsTeam team) {
-		boolean result = false;
-		if (team != null) {
-			if (team.getTeam_id() != 0 && ((team.getTeam_name() != null && !team.getTeam_name().equals(""))
-					|| (team.getTeam_desc() != null && !team.getTeam_desc().equals("")))) {
-				result = true;
+			if (bsTeamService.checkUpdateTeam(team)) {
+
+				if (bsTeamService.updateBsTeam(team) > 0) {
+					return new ResponseEntity<>(UserConstant.TEAM_UPDATE_SUCCESS, HttpStatus.OK);
+
+				} else {
+					return new ResponseEntity<>(UserConstant.TEAM_UPDATE_FAIL, HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+
+			} else {
+				return new ResponseEntity<>(UserConstant.TEAM_UPDATE_REQUIRED, HttpStatus.PRECONDITION_REQUIRED);
 			}
+
+		} else {
+			return new ResponseEntity<>(UserConstant.TEAM_NOT_EXIST, HttpStatus.NOT_FOUND);
 		}
-		return result;
 	}
 
 	/**
-	 * To delete the team.
-	 * When delete the team, all boards will also delete the according to the team_id.
-	 * */ 
-	@RequestMapping(value = "/deleteBsTeam", method = RequestMethod.POST)
-	public BsMessage deleteBsTeam(@RequestBody BsTeam team) {
-		logger.info(this.getClass().getSimpleName() + ": deleteBsTeam");
-		
-		BsMessage bsMsg = new BsMessage();
-		bsMsg.setMsg_code("404");
-		bsMsg.setMsg_title("Warning");
-		bsMsg.setMsg_desc("Delete Board Unsuccessfully.");
-		if (team.getTeam_id() != 0) {
-			if (bsTeamService.deleteBsTeam(team) > 0) {
-				bsMsg.setMsg_code("200");
-				bsMsg.setMsg_title("Success");
-				bsMsg.setMsg_desc("Delete Board Successfully.");
+	 * To delete the team. When delete the team, all boards will also delete the
+	 * according to the team_id.
+	 */
+	@DeleteMapping("/{teamId}")
+	public ResponseEntity<?> deleteBsTeam(@PathVariable("teamId") int teamId) {
+		logger.debug(this.getClass().getSimpleName() + ": deleteBsTeam");
+
+		if (bsTeamService.checkTeamByTeamId(teamId)) {
+			if (bsTeamService.deleteBsTeam(teamId) > 0) {
+				return new ResponseEntity<>(UserConstant.TEAM_DELETE_SUCCESS, HttpStatus.OK);
+
+			} else {
+				return new ResponseEntity<>(UserConstant.TEAM_DELETE_FAIL, HttpStatus.INTERNAL_SERVER_ERROR);				
 			}
+
+		} else {
+			return new ResponseEntity<>(UserConstant.TEAM_NOT_EXIST, HttpStatus.NOT_FOUND);
 		}
-		return bsMsg;
 	}
 
 }

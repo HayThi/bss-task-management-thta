@@ -6,17 +6,21 @@ import com.thta.task.model.BsUser;
 
 public interface BsUserService {
 
-	List<BsUser> getAllBsUser();
-
 	int createBsUser(BsUser user);
 
 	int updateBsUser(BsUser user);
 
-	int deleteBsUser(BsUser user);
+	List<BsUser> getAllBsUser();
+
+	int deleteBsUser(int userId);
 
 	boolean checkUserEmail(String email);
 
-	int getUserIdByUserEmail(String email);
-
 	boolean checkUserByUserId(int userId);
+
+	boolean checkCreateUser(BsUser bsUser);
+
+	boolean checkUpdateUser(BsUser bsUser);
+
+	int getUserIdByUserEmail(String email);
 }

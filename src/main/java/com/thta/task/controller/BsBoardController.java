@@ -1,167 +1,135 @@
 package com.thta.task.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.thta.task.commom_utility.UserConstant;
 import com.thta.task.model.BsBoard;
-import com.thta.task.model.BsMessage;
 import com.thta.task.model.BsModal;
 import com.thta.task.service.BsBoardService;
+import com.thta.task.service.BsTeamService;
+import com.thta.task.service.BsUserService;
 
 /**
  * This is the board controller.
- * */
+ */
 @RestController
+@RequestMapping("boards")
 public class BsBoardController {
-	
+
 	private Logger logger = LogManager.getLogger(BsBoardController.class);
 
 	@Autowired
-	BsBoardService bsBoardService;
+	private BsBoardService bsBoardService;
+
+	@Autowired
+	private BsUserService bsUserService;
+
+	@Autowired
+	private BsTeamService bsTeamService;
 
 	// To get all boards
-	@RequestMapping("/getAllBsBoards")
-	public List<BsBoard> getAllBsBoards() {
-		logger.info(this.getClass().getSimpleName() + ": getAllBsBoards");
-		return bsBoardService.getAllBsBoards();
+	@GetMapping
+	public ResponseEntity<?> getAllBsBoards() {
+		logger.debug(this.getClass().getSimpleName() + ": getAllBsBoards");
+		return new ResponseEntity<>(bsBoardService.getAllBsBoards(), HttpStatus.OK);
 	}
-	
+
 	// To retrieve all boards according to the user id.
-	@RequestMapping(value="/getBoardsByUserId", method = RequestMethod.POST)
-	public List<BsBoard> getBoardsByUserId(@RequestBody BsModal modal) {
-		logger.info(this.getClass().getSimpleName() + ": getBoardsByUserId");
-		
-		if (checkUserId(modal)) {
-			return bsBoardService.getBoardsByUserId(modal.getUser_id());
-			
+	@GetMapping("/user/{userId}")
+	public ResponseEntity<?> getBoardsByUserId(@PathVariable("userId") int userId) {
+		logger.debug(this.getClass().getSimpleName() + ": getBoardsByUserId");
+
+		if (bsUserService.checkUserByUserId(userId)) {
+			return new ResponseEntity<>(bsBoardService.getBoardsByUserId(userId), HttpStatus.OK);
+
 		} else {
-			return new ArrayList<BsBoard>();		
-		}		
-	}
-	
-	// To check user id.
-	private boolean checkUserId(BsModal modal) {
-		boolean result = false;
-		if (modal != null) {
-			if (modal.getUser_id() != 0) {
-				result = true;
-			}		
+			return new ResponseEntity<>(UserConstant.USER_NOT_EXIST, HttpStatus.NOT_FOUND);
 		}
-		return result;
 	}
-	
+
 	// To retrieve board by team id.
-	@RequestMapping(value="/getBoardsByTeamId", method = RequestMethod.POST)
-	public List<BsBoard> getBoardsByTeamId(@RequestBody BsModal modal) {
-		logger.info(this.getClass().getSimpleName() + ": getBoardsByTeamId");
-		
-		if (checkTeamId(modal)) {
-			return bsBoardService.getBoardsByTeamId(modal.getTeam_id());
-			
+	@GetMapping("/team/{teamId}")
+	public ResponseEntity<?> getBoardsByTeamId(@PathVariable("teamId") int teamId) {
+		logger.debug(this.getClass().getSimpleName() + ": getBoardsByTeamId");
+
+		if (bsTeamService.checkTeamByTeamId(teamId)) {
+			return new ResponseEntity<>(bsBoardService.getBoardsByTeamId(teamId), HttpStatus.OK);
+
 		} else {
-			return new ArrayList<BsBoard>();
+			return new ResponseEntity<>(UserConstant.TEAM_NOT_EXIST, HttpStatus.NOT_FOUND);
 		}
-	}
-	
-	// To check team id.
-	private boolean checkTeamId(BsModal modal) {
-		boolean result = false;
-		if (modal != null) {
-			if (modal.getTeam_id() != 0) {
-				result = true;
-			}		
-		}
-		return result;
 	}
 
 	// To create board.
-	@RequestMapping(value = "/createBsBoard", method = RequestMethod.POST)
-	public BsMessage createBsBoard(@RequestBody BsModal modal) {
-		logger.info(this.getClass().getSimpleName() + ": createBsBoard");
-		
-		BsMessage bsMsg = new BsMessage();
-		bsMsg.setMsg_code("404");
-		bsMsg.setMsg_title("Warning");
-		bsMsg.setMsg_desc("Create Board Unsuccessfully.");
-		if (checkCreateBoard(modal)) {
-			if (bsBoardService.createBsBoard(modal) > 0) {
-				bsMsg.setMsg_code("200");
-				bsMsg.setMsg_title("Success");
-				bsMsg.setMsg_desc("Create Board Successfully.");
-			}
-		}
-		return bsMsg;
-	}
+	@PostMapping
+	public ResponseEntity<?> createBsBoard(@RequestBody BsModal modal) {
+		logger.debug(this.getClass().getSimpleName() + ": createBsBoard");
 
-	/**
-	 * To check data when create board: user_id or team_id and board_title are required.
-	 * */ 
-	private boolean checkCreateBoard(BsModal modal) {
-		boolean result = false;
-		if (modal != null) {
-			if ((modal.getUser_id() != 0 || modal.getTeam_id() != 0) && modal.getBoard_title() != null
-					&& !modal.getBoard_title().equals("")) {
-				result = true;
+		if (bsBoardService.checkCreateBoard(modal)) {
+
+			if (bsBoardService.createBsBoard(modal) > 0) {
+				return new ResponseEntity<>(UserConstant.BOARD_CREATE_SUCCESS, HttpStatus.OK);
+
+			} else {
+				return new ResponseEntity<>(UserConstant.BOARD_CREATE_FAIL, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
+
+		} else {
+			return new ResponseEntity<>(UserConstant.BOARD_CREATE_REQUIRED, HttpStatus.PRECONDITION_REQUIRED);
 		}
-		return result;
 	}
 
 	// To update board according to the board id.
-	@RequestMapping(value = "/updateBsBoard", method = RequestMethod.POST)
-	public BsMessage updateBsBoard(@RequestBody BsBoard board) {
-		logger.info(this.getClass().getSimpleName() + ": updateBsBoard");
-		
-		BsMessage bsMsg = new BsMessage();
-		bsMsg.setMsg_code("404");
-		bsMsg.setMsg_title("Warning");
-		bsMsg.setMsg_desc("Update Board Unsuccessfully.");
-		if (checkUpdateBoard(board)) {
-			if (bsBoardService.updateBsBoard(board) > 0) {
-				bsMsg.setMsg_code("200");
-				bsMsg.setMsg_title("Success");
-				bsMsg.setMsg_desc("Update Board Successfully.");
+	@PutMapping("/{boardId}")
+	public ResponseEntity<?> updateBsBoard(@PathVariable("boardId") int boardId, @RequestBody BsBoard board) {
+		logger.debug(this.getClass().getSimpleName() + ": updateBsBoard");
+
+		if (bsBoardService.checkBoardByBoardId(boardId)) {
+			board.setBoard_id(boardId);
+			if (bsBoardService.checkUpdateBoard(board)) {
+				if (bsBoardService.updateBsBoard(board) > 0) {
+					return new ResponseEntity<>(UserConstant.BOARD_UPDATE_SUCCESS, HttpStatus.OK);
+				} else {
+					return new ResponseEntity<>(UserConstant.BOARD_UPDATE_FAIL, HttpStatus.INTERNAL_SERVER_ERROR);
+				}
+
+			} else {
+				return new ResponseEntity<>(UserConstant.BOARD_UPDATE_REQUIRED, HttpStatus.PRECONDITION_REQUIRED);
 			}
+
+		} else {
+			return new ResponseEntity<>(UserConstant.BOARD_NOT_EXIST, HttpStatus.NOT_FOUND);
 		}
-		return bsMsg;
 	}
 
-	// Check data: board_id and board_title are required.
-	private boolean checkUpdateBoard(BsBoard board) {
-		boolean result = false;
-		if (board != null) {
-			if (board.getBoard_id() != 0 && board.getBoard_title() != null && !board.getBoard_title().equals("")) {
-				result = true;
-			}
-		}
-		return result;
-	}
+	// To delete the board according to the board id
+	@DeleteMapping("/{boardId}")
+	public ResponseEntity<?> deleteBsBoard(@PathVariable("boardId") int boardId) {
+		logger.debug(this.getClass().getSimpleName() + ": deleteBsBoard");
 
-	//To delete the board according to the board id
-	@RequestMapping(value = "/deleteBsBoard", method = RequestMethod.POST)
-	public BsMessage deleteBsBoard(@RequestBody BsBoard board) {
-		logger.info(this.getClass().getSimpleName() + ": deleteBsBoard");
-		
-		BsMessage bsMsg = new BsMessage();
-		bsMsg.setMsg_code("404");
-		bsMsg.setMsg_title("Warning");
-		bsMsg.setMsg_desc("Delete Board Unsuccessfully.");
-		if (board != null && board.getBoard_id() != 0) {
-			if (bsBoardService.deleteBsBoard(board) > 0) {
-				bsMsg.setMsg_code("200");
-				bsMsg.setMsg_title("Success");
-				bsMsg.setMsg_desc("Delete Board Successfully.");
+		if (bsBoardService.checkBoardByBoardId(boardId)) {
+			if (bsBoardService.deleteBsBoard(boardId) > 0) {
+				return new ResponseEntity<>(UserConstant.BOARD_DELETE_SUCCESS, HttpStatus.CONFLICT);
+				
+			} else {
+				return new ResponseEntity<>(UserConstant.BOARD_DELETE_FAIL, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
+
+		} else {
+			return new ResponseEntity<>(UserConstant.BOARD_NOT_EXIST, HttpStatus.NOT_FOUND);
 		}
-		return bsMsg;
 	}
 
 }

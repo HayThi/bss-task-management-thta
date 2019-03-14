@@ -1,40 +1,41 @@
 package com.thta.task.controller;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
 import org.mockito.Matchers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.google.gson.Gson;
-import com.thta.task.CommonUtil;
+import com.thta.task.commom_utility.UserConstant;
 import com.thta.task.model.BsBoard;
 import com.thta.task.model.BsModal;
 
 /**
  * This is the Board Controller Unit Test.
  */
+@SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
 @RunWith(SpringRunner.class)
-@WebMvcTest(BsBoardController.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 public class BsBoardControllerTest {
 
 	@Autowired
@@ -44,11 +45,6 @@ public class BsBoardControllerTest {
 	private BsBoardController bsBoardController;
 
 	private Gson gson = new Gson();
-
-	@Before
-	public void setup() {
-		mockMvc = MockMvcBuilders.standaloneSetup(bsBoardController).build();
-	}
 
 	// To test when getAllBsBoards URL is called.
 	@Test
@@ -63,10 +59,12 @@ public class BsBoardControllerTest {
 		boards.add(board1);
 		boards.add(board2);
 
-		BDDMockito.given(bsBoardController.getAllBsBoards()).willReturn(boards);
+		ResponseEntity entity = new ResponseEntity<List<BsBoard>>(boards, HttpStatus.OK);
 
-		mockMvc.perform(MockMvcRequestBuilders.get("/getAllBsBoards").contentType(MediaType.APPLICATION_JSON))
-				.andDo(print()).andExpect(status().isOk()).andExpect(jsonPath("$[0].board_id", is(1)));
+		when(bsBoardController.getAllBsBoards()).thenReturn(entity);
+
+		mockMvc.perform(get("/boards").contentType(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().isOk());
 	}
 
 	// To test when getBoardsByUserId URL is called.
@@ -82,14 +80,12 @@ public class BsBoardControllerTest {
 		boards.add(board1);
 		boards.add(board2);
 
-		BsModal modal = new BsModal();
-		modal.setUser_id(1);
+		ResponseEntity entity = new ResponseEntity<List<BsBoard>>(boards, HttpStatus.OK);
 
-		BDDMockito.given(bsBoardController.getBoardsByUserId(Matchers.any(BsModal.class))).willReturn(boards);
+		when(bsBoardController.getBoardsByUserId(Matchers.anyInt())).thenReturn(entity);
 
-		mockMvc.perform(MockMvcRequestBuilders.post("/getBoardsByUserId").contentType(MediaType.APPLICATION_JSON)
-				.content(gson.toJson(modal)).characterEncoding("utf-8")).andDo(print()).andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].board_title", is("Board 1")));
+		mockMvc.perform(get("/boards/user/1").contentType(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().isOk());
 	}
 
 	// To test when getBoardsByTeamId URL is called.
@@ -105,14 +101,12 @@ public class BsBoardControllerTest {
 		boards.add(board1);
 		boards.add(board2);
 
-		BsModal modal = new BsModal();
-		modal.setTeam_id(1);
+		ResponseEntity entity = new ResponseEntity<List<BsBoard>>(boards, HttpStatus.OK);
 
-		BDDMockito.given(bsBoardController.getBoardsByTeamId(Matchers.any(BsModal.class))).willReturn(boards);
+		when(bsBoardController.getBoardsByUserId(Matchers.anyInt())).thenReturn(entity);
 
-		mockMvc.perform(MockMvcRequestBuilders.post("/getBoardsByTeamId").contentType(MediaType.APPLICATION_JSON)
-				.content(gson.toJson(modal)).characterEncoding("utf-8")).andDo(print()).andExpect(status().isOk())
-				.andExpect(jsonPath("$[1].board_id", is(2)));
+		mockMvc.perform(get("/boards/team/1").contentType(MediaType.APPLICATION_JSON)).andDo(print())
+				.andExpect(status().isOk());
 	}
 
 	// To test when createBsBoard URL is called.
@@ -124,18 +118,12 @@ public class BsBoardControllerTest {
 		// modal.setTeam_id(1);
 		// modal.setBoard_title("Create board by TeamId 1");
 
-		BDDMockito.given(bsBoardController.createBsBoard(Matchers.any(BsModal.class)))
-				.willReturn(CommonUtil.getSuccessMsg());
+		ResponseEntity entity = new ResponseEntity<>(UserConstant.BOARD_CREATE_SUCCESS, HttpStatus.OK);
 
-		MvcResult result = mockMvc
-				.perform(post("/createBsBoard").contentType(MediaType.APPLICATION_JSON).content(gson.toJson(modal))
-						.characterEncoding("utf-8"))
-				.andExpect(status().isOk())
-				.andExpect(MockMvcResultMatchers.content().json(gson.toJson(CommonUtil.getSuccessMsg()))).andDo(print())
-				.andReturn();
+		when(bsBoardController.createBsBoard(Matchers.any(BsModal.class))).thenReturn(entity);
 
-		String res = result.getResponse().getContentAsString();
-		System.err.println("createBsBoard is " + res);
+		mockMvc.perform(post("/boards").contentType(MediaType.APPLICATION_JSON).content(gson.toJson(modal)))
+				.andDo(print()).andExpect(status().isOk());
 	}
 
 	// To test when updateBsBoard URL is called.
@@ -145,12 +133,12 @@ public class BsBoardControllerTest {
 		board.setBoard_id(12);
 		board.setBoard_title("Update Board title");
 
-		BDDMockito.given(bsBoardController.updateBsBoard(Matchers.any(BsBoard.class)))
-				.willReturn(CommonUtil.getSuccessMsg());
+		ResponseEntity entity = new ResponseEntity<>(UserConstant.BOARD_UPDATE_SUCCESS, HttpStatus.OK);
 
-		mockMvc.perform(post("/updateBsBoard").contentType(MediaType.APPLICATION_JSON).content(gson.toJson(board))
-				.characterEncoding("utf-8")).andExpect(status().isOk()).andExpect(jsonPath("$.msg_code", is("200")))
-				.andDo(print());
+		when(bsBoardController.updateBsBoard(Matchers.anyInt(), Matchers.any(BsBoard.class))).thenReturn(entity);
+
+		mockMvc.perform(put("/boards/12").contentType(MediaType.APPLICATION_JSON).content(gson.toJson(board)))
+				.andDo(print()).andExpect(status().isOk());
 	}
 
 	// To test when deleteBsBoard URL is called.
@@ -158,13 +146,14 @@ public class BsBoardControllerTest {
 	public void deleteBsBoard() throws Exception {
 		BsBoard board = new BsBoard();
 		board.setBoard_id(12);
+		board.setBoard_title("Board");
 
-		BDDMockito.given(bsBoardController.deleteBsBoard(Matchers.any(BsBoard.class)))
-				.willReturn(CommonUtil.getSuccessMsg());
+		ResponseEntity entity = new ResponseEntity<>(UserConstant.BOARD_DELETE_SUCCESS, HttpStatus.OK);
 
-		mockMvc.perform(post("/deleteBsBoard").contentType(MediaType.APPLICATION_JSON).content(gson.toJson(board))
-				.characterEncoding("utf-8")).andExpect(status().isOk()).andExpect(jsonPath("$.msg_code", is("200")))
-				.andDo(print());
+		when(bsBoardController.deleteBsBoard(Matchers.anyInt())).thenReturn(entity);
+
+		mockMvc.perform(delete("/boards/12").contentType(MediaType.APPLICATION_JSON))
+				.andDo(print()).andExpect(status().isOk());
 	}
 
 }

@@ -17,10 +17,14 @@ public interface BsBoardService {
 
 	int updateBsBoard(BsBoard board);
 
-	int deleteBsBoard(BsBoard board);
+	int deleteBsBoard(int boardId);
 
 	int deleteBsBoardById(int id);
 
 	boolean checkBoardByBoardId(int boardId);
+	
+	boolean checkCreateBoard(BsModal modal);
+	
+	boolean checkUpdateBoard(BsBoard board);
 
 }

@@ -20,7 +20,7 @@ import com.thta.task.model.BsTeam;
 public class BsTeamServiceTest {
 
 	@Autowired
-	BsTeamService bsTeamService;
+	private BsTeamService bsTeamService;
 
 	// To test when retrieve all teams.
 	@Test
@@ -60,10 +60,8 @@ public class BsTeamServiceTest {
 
 	// To test when delete team. This will also delete team_id in the dump.
 	@Test
-	public void deleteBsTeam() {
-		BsTeam team = new BsTeam();
-		team.setTeam_id(4);
-		int deleteResult = bsTeamService.deleteBsTeam(team);
+	public void deleteBsTeam() {		
+		int deleteResult = bsTeamService.deleteBsTeam(8);
 		assertThat(deleteResult).isNotEqualTo(0);
 	}
 
