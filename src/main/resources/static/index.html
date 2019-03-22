@@ -1,0 +1,19 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script type="text/javascript">
+	function pushNoti() {
+		console.log("pushNoti");
+		console.log(location.href);
+		var url = location.href + 'sendPushNoti';
+		var xhr = new XMLHttpRequest();
+		xhr.open('GET', url, true);
+		xhr.send();
+	}
+</script>
+</head>
+<body>
+<h2>Hello World</h2>
+<button type="button" onclick="pushNoti();">Click Me!</button>
+</body>
+</html>
